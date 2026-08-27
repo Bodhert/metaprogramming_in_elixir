@@ -1,9 +1,25 @@
 <!-- livebook:{"autosave_interval_s":600} -->
 
-# Untitled notebook
+# notebook
 
-## Section
+## Chapter 1
+
+you need to start small and work your way up to advance areas, **metaprograming** is about manupulating and inspecting the ast
 
 ```elixir
-IO.puts("test")
+quote do: div(10,2)
 ```
+
+macros recieves ast and returns ast (abstrac syntax tree)
+
+```elixir
+quote do: 1*3+3
+```
+
+```elixir
+defmodule math do
+  defmacro say({:+, [lhs, ]})
+end
+```
+
+fas
