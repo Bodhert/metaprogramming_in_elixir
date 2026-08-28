@@ -17,9 +17,36 @@ quote do: 1*3+3
 ```
 
 ```elixir
-defmodule math do
-  defmacro say({:+, [lhs, ]})
+defmodule Math do
+  defmacro say({:+, _, [lhs, rhs]}) do
+    quote do
+      lhs = unquote(lhs)
+      rhs = unquote(rhs)
+      result = lhs + rhs
+      IO.puts "#{lhs} plus #{rhs} == #{result}"
+      result
+    end 
+  end
+
+  defmacro say({:*, _, [lhs, rhs]}) do
+    quote do
+      lhs = unquote(lhs)
+      rhs = unquote(rhs)
+      result = lhs * rhs
+      IO.puts "#{lhs} times #{rhs} == #{result}"
+      result
+    end
+  end
 end
+```
+
+```elixir
+require Math
+Math.say 5+3
+Math.say 5*3*3 + 9
+quote do: Math.say 5*3
+
+
 ```
 
 fas
