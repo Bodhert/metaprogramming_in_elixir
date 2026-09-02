@@ -24,7 +24,7 @@ defmodule Math do
       rhs = unquote(rhs)
       result = lhs + rhs
       IO.puts "#{lhs} plus #{rhs} == #{result}"
-      result
+      # result
     end 
   end
 
@@ -37,16 +37,85 @@ defmodule Math do
       result
     end
   end
+
+
+  # this will puts "test" tree times since it is being baked into the ast
+  defmacro test do
+    quote do
+      IO.puts("test")
+      3
+    end
+  end
+
+  ## even if it is a macro it will only prints one test
+  defmacro unquoted_test do
+      IO.puts("test")
+      3
+  end
 end
 ```
 
 ```elixir
 require Math
-Math.say 5+3
-Math.say 5*3*3 + 9
-quote do: Math.say 5*3
 
+# for _ <- 1..3, do: Math.test
+# for _ <- 1..3, do: Math.unquoted_test
 
 ```
 
-fas
+You can be afraid of being a little unresponsible when learning a new skill .
+"You can’t
+be afraid to be a little irresponsible while you’re learning" awesome teaching in general.
+
+macros must be defined withing a module
+
+```elixir
+defmodule ControlFlow do
+  defmacro if!(expression, do: block) do
+    quote do
+      if not unquote(expression), do: unquote(block)
+    end
+  end
+end
+```
+
+```elixir
+require ControlFlow
+ControlFlow.if! 2 == 5, do: "entre"
+```
+
+we can think of 'quote' and 'unquote' as the string interpolation of code. quote generates like `" "` and unquote injects like `#{}`
+
+```elixir
+number = 5
+ast = quote do
+  number * 10
+end
+# it fail cause it treats number as a variable not as a value assigned
+Code.eval_quoted(ast)
+```
+
+```elixir
+number = 5
+ast = quote do
+  unquote(number) * 10
+end
+
+# Code.eval_quoted(ast)
+```
+
+```elixir
+ast = quote do
+  ControlFlow.if! 2 == 5, do: "entre"
+end
+```
+
+```elixir
+first_expansion = Macro.expand_once(ast, __ENV__)
+```
+
+```elixir
+second_expansion = Macro.expand_once(first_expansion, __ENV__)
+```
+
+the place where the code is injected is called context
