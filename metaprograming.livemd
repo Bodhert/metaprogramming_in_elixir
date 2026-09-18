@@ -1,4 +1,4 @@
-<!-- livebook:{"autosave_interval_s":600} -->
+<!-- livebook:{"autosave_interval_s":600,"default_language":"erlang"} -->
 
 # notebook
 
@@ -118,4 +118,17 @@ first_expansion = Macro.expand_once(ast, __ENV__)
 second_expansion = Macro.expand_once(first_expansion, __ENV__)
 ```
 
+## Injecting code
+
 the place where the code is injected is called context
+
+```elixir
+defmodule Mod do
+  defmacro definfo do
+    IO.puts "In macros context (#{__MODULE__})"
+    quote do
+      
+    end
+  end
+end
+```
