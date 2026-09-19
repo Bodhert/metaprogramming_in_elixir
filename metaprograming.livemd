@@ -1,4 +1,4 @@
-<!-- livebook:{"autosave_interval_s":600,"default_language":"erlang"} -->
+<!-- livebook:{"autosave_interval_s":600,"persist_outputs":true} -->
 
 # notebook
 
@@ -10,10 +10,23 @@ you need to start small and work your way up to advance areas, **metaprograming*
 quote do: div(10,2)
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+{:div, [context: Elixir, imports: [{2, Kernel}]], [10, 2]}
+```
+
 macros recieves ast and returns ast (abstrac syntax tree)
 
 ```elixir
 quote do: 1*3+3
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:+, [context: Elixir, imports: [{1, Kernel}, {2, Kernel}]],
+ [{:*, [context: Elixir, imports: [{2, Kernel}]], [1, 3]}, 3]}
 ```
 
 ```elixir
@@ -55,12 +68,24 @@ defmodule Math do
 end
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Math, <<70, 79, 82, 49, 0, 0, 16, ...>>, ...}
+```
+
 ```elixir
 require Math
 
 # for _ <- 1..3, do: Math.test
 # for _ <- 1..3, do: Math.unquoted_test
 
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+Math
 ```
 
 You can be afraid of being a little unresponsible when learning a new skill .
@@ -79,9 +104,21 @@ defmodule ControlFlow do
 end
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+{:module, ControlFlow, <<70, 79, 82, 49, 0, 0, 7, ...>>, ...}
+```
+
 ```elixir
 require ControlFlow
 ControlFlow.if! 2 == 5, do: "entre"
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+"entre"
 ```
 
 we can think of 'quote' and 'unquote' as the string interpolation of code. quote generates like `" "` and unquote injects like `#{}`
@@ -95,6 +132,20 @@ end
 Code.eval_quoted(ast)
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+error: undefined variable "number" (context Elixir)
+└─ nofile:1
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+** (CompileError) cannot compile cell (errors have been logged)
+```
+
 ```elixir
 number = 5
 ast = quote do
@@ -104,18 +155,74 @@ end
 # Code.eval_quoted(ast)
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+{:*, [context: Elixir, imports: [{2, Kernel}]], [5, 10]}
+```
+
 ```elixir
 ast = quote do
   ControlFlow.if! 2 == 5, do: "entre"
 end
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+{{:., [], [{:__aliases__, [alias: false], [:ControlFlow]}, :if!]}, [],
+ [{:==, [context: Elixir, imports: [{2, Kernel}]], [2, 5]}, [do: "entre"]]}
+```
+
 ```elixir
 first_expansion = Macro.expand_once(ast, __ENV__)
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+{:if, [context: ControlFlow, imports: [{2, Kernel}]],
+ [
+   {:not, [context: ControlFlow, imports: [{1, Kernel}]],
+    [{:==, [context: Elixir, imports: [{2, Kernel}]], [2, 5]}]},
+   [do: "entre"]
+ ]}
+```
+
 ```elixir
 second_expansion = Macro.expand_once(first_expansion, __ENV__)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:case, [optimize_boolean: true, type_check: :expr],
+ [
+   {:not, [context: ControlFlow, imports: [{1, Kernel}]],
+    [{:==, [context: Elixir, imports: [{2, Kernel}]], [2, 5]}]},
+   [
+     do: [
+       {:->, [],
+        [
+          [
+            {:when, [],
+             [
+               {:x, [counter: -576460752303423134], Kernel},
+               {{:., [generated: true], [:erlang, :orelse]}, [generated: true],
+                [
+                  {{:., [generated: true], [:erlang, :"=:="]}, [generated: true],
+                   [{:x, [counter: -576460752303423134, generated: true], Kernel}, false]},
+                  {{:., [generated: true], [:erlang, :"=:="]}, [generated: true],
+                   [{:x, [counter: -576460752303423134, generated: true], Kernel}, nil]}
+                ]}
+             ]}
+          ],
+          nil
+        ]},
+       {:->, [], [[{:_, [], Kernel}], "entre"]}
+     ]
+   ]
+ ]}
 ```
 
 ## Injecting code
@@ -127,8 +234,125 @@ defmodule Mod do
   defmacro definfo do
     IO.puts "In macros context (#{__MODULE__})"
     quote do
-      
+      IO.puts "In callers contex (#{__MODULE__})"
+      def friendly_info do
+        IO.puts """
+        My name is #{__MODULE__}
+        My function are #{inspect __MODULE__.__info__(:functions)}
+        """
+      end   
     end
   end
 end
 ```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Mod, <<70, 79, 82, 49, 0, 0, 12, ...>>, ...}
+```
+
+```elixir
+defmodule MyModule do
+  require Mod
+  Mod.definfo 
+end
+
+# it will not work inside the same module, cause it looks in the local scope
+MyModule.friendly_info
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+In macros context (Elixir.Mod)
+In callers contex (Elixir.MyModule)
+My name is Elixir.MyModule
+My function are [friendly_info: 0]
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+macro hygine, means how we access scope beetween, calllers, the cleanes way possible. but sometimes migth be an unnecesary evil
+
+```elixir
+ast = quote do
+  if meaning_of_life == 42 do
+    "its true"
+  else
+    "tbd"
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:if, [context: Elixir, imports: [{2, Kernel}]],
+ [
+   {:==, [context: Elixir, imports: [{2, Kernel}]], [{:meaning_of_life, [], Elixir}, 42]},
+   [do: "its true", else: "tbd"]
+ ]}
+```
+
+```elixir
+Code.eval_quoted(ast)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+error: undefined variable "meaning_of_life" (context Elixir)
+└─ nofile:1
+
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+** (CompileError) cannot compile cell (errors have been logged)
+```
+
+the previous error is cause elixir is not able to access the outside scope.
+
+```elixir
+ast = quote do
+  if var!(meaning_of_life) == 42 do
+    "true"
+  else
+    "false"
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:if, [context: Elixir, imports: [{2, Kernel}]],
+ [
+   {:==, [context: Elixir, imports: [{2, Kernel}]],
+    [
+      {:var!, [context: Elixir, imports: [{1, Kernel}, {2, Kernel}]],
+       [{:meaning_of_life, [], Elixir}]},
+      42
+    ]},
+   [do: "true", else: "false"]
+ ]}
+```
+
+```elixir
+Code.eval_quoted(ast, meaning_of_life: 43)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{"false", [meaning_of_life: 43]}
+```
+
+I am on page 33
