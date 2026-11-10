@@ -1,0 +1,27 @@
+# chapter_2
+
+## Section
+
+```elixir
+defmodule ControlFlow do
+  defmacro my_if(expr, do: if_block), do: build_if(expr, do: if_block, else: nil)
+  defp build_if(expr, do: if_block, else: else_block) do
+      quote do
+        case unquote(expr) do
+          value === false -> unquote(else_block)
+          value === nil  -> unquote(else_block)
+          _ -> unquote(if_block)
+        end
+      end
+  end
+end
+```
+
+```elixir
+require ControlFlow
+
+ControlFlow.my_if 1 == 2 do
+  true
+end
+
+```
